@@ -67,6 +67,34 @@
       <span>共 {{ total }} 条稳定性考察记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
     </footer>
+
+    <section class="page" style="padding: 0; margin-top: 18px;">
+      <header class="page-head" style="margin: 0 0 8px;">
+        <div>
+          <h3 style="margin: 0; font-size: 15px;">留样销毁待办回写</h3>
+          <p class="page-desc">留样销毁状态按批号回写到此待办：已到期待销毁、已销毁已回写，与留样台账同源。</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn" type="button" @click="reloadTodos">刷新待办</button>
+        </div>
+      </header>
+      <table class="data-table todo-table">
+        <thead>
+          <tr><th>对应批号</th><th>留样编号</th><th>待办状态</th><th>回写内容</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="todo in retainTodos" :key="todo.key">
+            <td>{{ todo.batch }}</td>
+            <td>{{ todo.retainCode }}</td>
+            <td><span class="tag">{{ todo.status === '已销毁' ? '已回写' : '待销毁' }}</span></td>
+            <td>{{ todo.writeback || '留样已到期，等待销毁后回写' }}</td>
+          </tr>
+          <tr v-if="!retainTodos.length">
+            <td colspan="4" class="empty-state">暂无关联留样的销毁待办</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
   </section>
 </template>
 
@@ -78,6 +106,8 @@ import {
   listEntries,
   moduleMeta,
   runAction as applyAction,
+  stabilityRetainTodos,
+  type StabilityTodo,
 } from '@/api/local-service'
 import type { EntryRow } from '@/data/types'
 
@@ -128,8 +158,19 @@ function reload() {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    reloadTodos()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '稳定性考察列表读取失败'
+  }
+}
+
+const retainTodos = ref<StabilityTodo[]>([])
+
+function reloadTodos() {
+  try {
+    retainTodos.value = stabilityRetainTodos()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '留样销毁待办读取失败'
   }
 }
 

@@ -41,7 +41,15 @@ export function listRows(key: string): EntryRow[] {
 }
 
 export function saveRows(key: string, rows: EntryRow[]): void {
-  const next = { ...allRows(), [key]: rows }
+  saveAll({ [key]: rows })
+}
+
+/**
+ * 一次性提交多张表的改动（如销毁同时写留样表与稳定性表）。
+ * 先在内存里组装完整快照，再单次落库：中途任何一步失败都不会留下半写状态。
+ */
+export function saveAll(changes: Record<string, EntryRow[]>): void {
+  const next = { ...allRows(), ...changes }
   cache = next
   if (typeof window !== 'undefined' && window.localStorage) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
