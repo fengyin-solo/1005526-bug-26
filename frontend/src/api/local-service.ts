@@ -3,7 +3,7 @@ import { allRows, listRows, resetRows, saveRows } from '@/data/local-store'
 import type { ActionResult, EntryRow, ModuleMeta, OverviewResult, PageResult } from '@/data/types'
 
 // 会写进数据的「往回走」动作：命中就把这条记录标成异常态，看板上能一眼看出来。
-const NEGATIVE_ACTIONS = ['撤销', '作废', '拒绝', '驳回', '停用', '忽略', '下线', '回滚']
+const NEGATIVE_ACTIONS = ['撤销', '作废', '拒绝', '驳回', '停用', '忽略', '下线', '回滚', '退回']
 
 export function moduleMeta(key: string): ModuleMeta {
   const meta = MODULE_BY_KEY.get(key)
@@ -42,6 +42,15 @@ export function runAction(key: string, id: number, action: string): ActionResult
   const current = String(rows[index].status)
   if (current === target) {
     return { ok: false, message: `${meta.entity}已经是「${target}」，不用重复操作` }
+  }
+  // 状态只能顺着流转：登记了来源状态的动作，从别的状态发起一律越级挡回。
+  const sources = meta.actionSources?.[action]
+  if (sources && !sources.includes(current)) {
+    const allowed = sources.map((item) => `「${item}」`).join('')
+    return {
+      ok: false,
+      message: `${meta.entity}「${action}」只能由${allowed}流转，当前状态「${current}」越级挡回`,
+    }
   }
   const lastStatus = meta.statuses[meta.statuses.length - 1]
   const updated: EntryRow = {

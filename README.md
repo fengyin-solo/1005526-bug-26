@@ -67,5 +67,10 @@ npm run build
   `frontend/src/api/local-service.ts`。
 - 字段、状态、动作与流转目标集中在 `frontend/src/data/modules.ts`；示例数据在
   `frontend/src/data/seed.ts`。
-- 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
+- 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断；登记了来源状态的动作
+  只能顺着流转，越级会被挡回。
+- 留样的销毁/退回不走通用动作：`frontend/src/api/retainsample-service.ts` 负责销毁登记、
+  退回清理（销毁日期、存放条件、留样数量、销毁经手人一并清空）、销毁明细与断点草稿、以及
+  回写稳定性考察的待办；存放条件选项与留样数量口径集中在 `frontend/src/data/retainsample.ts`，
+  销毁表单、详情抽屉与越界校验共用同一套。
 - 想回到初始数据：清掉浏览器里 `pharma-cleanroom:entries` 这一项，或调用 `resetModule(模块)`。
